@@ -1,6 +1,7 @@
 // Transaction แต่ละรายการ
 export interface Transaction {
   id: number;
+  title: string,
   type: 'income' | 'expense'; // รายรับหรือรายจ่าย
   amount: number;             // จำนวนเงิน
   category?: string;          // หมวดหมู่ (optional)

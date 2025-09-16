@@ -1,12 +1,20 @@
 import { Transaction, TransactionPayload, TransactionResponse } from "@/types/transaction";
 
-const API_URL = "http://localhost:8000/api"; // ของมึง Laravel
+const API_URL = "http://127.0.0.1:8000/api"; // ของมึง Laravel
 
 // ดึง transaction ทั้งหมด
-export async function getTransactions(): Promise<TransactionResponse> {
-  const res = await fetch(`${API_URL}/transactions`);
-  if (!res.ok) throw new Error("Failed to fetch transactions");
-  return res.json();
+
+export async function getListTransactions(period?: string): Promise<TransactionResponse> {
+    const res = await fetch(`${API_URL}/transactions`);
+    if (!res.ok) throw new Error("Failed to fetch transactions");
+    return res.json();
+}
+
+export async function getTransactions(period?: string): Promise<TransactionResponse> {
+    const url = period ? `${API_URL}/transactions/?period=${period}` : API_URL;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch transactions");
+    return res.json();
 }
 
 // ดึง transaction เดี่ยว

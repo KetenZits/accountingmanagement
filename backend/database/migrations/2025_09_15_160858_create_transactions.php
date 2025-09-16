@@ -10,12 +10,13 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('title'); // ชื่อรายการ เช่น "เงินเดือน", "ค่าอาหาร"
-            $table->enum('type', ['income', 'expense']); // ประเภท รายรับ/รายจ่าย
-            $table->decimal('amount', 12, 2); // จำนวนเงิน
-            $table->date('date'); // วันที่บันทึก
-            $table->text('note')->nullable(); // โน้ตเพิ่มเติม (ใส่ก็ได้ ไม่ใส่ก็ได้)
-            $table->timestamps(); // created_at, updated_at
+            $table->string('title')->nullable();
+            $table->enum('type', ['income', 'expense']);
+            $table->decimal('amount', 10, 2);
+            $table->string('category')->nullable(); // 👈 เพิ่ม
+            $table->text('note')->nullable();
+            $table->date('date');
+            $table->timestamps();
         });
     }
 

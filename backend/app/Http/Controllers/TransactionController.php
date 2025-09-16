@@ -4,40 +4,69 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaction;
+use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
-    // ดึงข้อมูลทั้งหมด + summary
-    public function index()
+    // ดึงข้อมูลทั้งหมด + summary + filter ตาม period
+    public function index(Request $request)
     {
-        $transactions = Transaction::orderBy('date', 'desc')->get();
+        $period = $request->query('period', 'all'); // daily, weekly, monthly, yearly, all
 
-        $totalIncome = Transaction::where('type', 'income')->sum('amount');
-        $totalExpense = Transaction::where('type', 'expense')->sum('amount');
+        $query = Transaction::query();
+
+        $now = Carbon::now();
+
+        switch ($period) {
+            case 'daily':
+                $query->whereDate('date', $now->toDateString());
+                break;
+            case 'weekly':
+                $query->whereBetween('date', [$now->startOfWeek()->toDateString(), $now->endOfWeek()->toDateString()]);
+                break;
+            case 'monthly':
+                $query->whereYear('date', $now->year)
+                      ->whereMonth('date', $now->month);
+                break;
+            case 'yearly':
+                $query->whereYear('date', $now->year);
+                break;
+            case 'all':
+            default:
+                // ไม่ filter
+                break;
+        }
+
+        // เอา transactions ออกมาก่อน
+        $transactions = $query->orderBy('date', 'desc')->get();
+
+        // clone query สำหรับ summary
+        $summaryQuery = clone $query;
+
+        $totalIncome = (clone $summaryQuery)->where('type', 'income')->sum('amount');
+        $totalExpense = (clone $summaryQuery)->where('type', 'expense')->sum('amount');
         $balance = $totalIncome - $totalExpense;
 
         return response()->json([
             'data' => $transactions,
             'totalIncome' => $totalIncome,
             'totalExpense' => $totalExpense,
-            'balance' => $balance
+            'balance' => $balance,
         ]);
     }
 
-    // ดึงข้อมูลรายการเดียว
     public function show($id)
     {
         $transaction = Transaction::findOrFail($id);
         return response()->json($transaction);
     }
 
-    // สร้าง transaction ใหม่
     public function store(Request $request)
     {
         $validated = $request->validate([
             'type' => 'required|in:income,expense',
             'amount' => 'required|numeric|min:0',
-            'category' => 'nullable|string|max:255',
+            'category' => 'required',
             'note' => 'nullable|string|max:500',
             'date' => 'required|date',
         ]);
@@ -47,7 +76,6 @@ class TransactionController extends Controller
         return response()->json($transaction, 201);
     }
 
-    // อัพเดท transaction
     public function update(Request $request, $id)
     {
         $transaction = Transaction::findOrFail($id);
@@ -55,7 +83,7 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:income,expense',
             'amount' => 'required|numeric|min:0',
-            'category' => 'nullable|string|max:255',
+            'category' => 'required',
             'note' => 'nullable|string|max:500',
             'date' => 'required|date',
         ]);
@@ -65,7 +93,6 @@ class TransactionController extends Controller
         return response()->json($transaction);
     }
 
-    // ลบ transaction
     public function destroy($id)
     {
         $transaction = Transaction::findOrFail($id);
